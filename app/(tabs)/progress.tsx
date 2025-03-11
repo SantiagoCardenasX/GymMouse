@@ -65,9 +65,11 @@ export default function ProgressPage() {
       </View>
 
       {/* Add Measurement Button */}
+      <View style={styles.addButtonContainer}>
       <TouchableOpacity style={styles.addButton} onPress={() => setIsModalVisible(true)}>
         <FontAwesome5 name="plus" size={20} color="white" />
       </TouchableOpacity>
+      </View>
 
       {/* Modal for Adding Measurement */}
       {isModalVisible && (
@@ -88,7 +90,7 @@ export default function ProgressPage() {
           />
           <View style={styles.modalActions}>
             <TouchableOpacity style={styles.addSetButton} onPress={handleAddMeasurement}>
-              <Text style={styles.buttonText}>Add Measurement</Text>
+              <Text style={styles.buttonText}>Add</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelButton} onPress={() => setIsModalVisible(false)}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -138,14 +140,20 @@ const styles = StyleSheet.create({
     color: '#EBEBEB',
     fontSize: 14,
   },
+
+  addButtonContainer: {
+    flex: 1,
+    alignItems: 'center',
+    },
+    
   addButton: {
     backgroundColor: '#FF7B24',
     padding: 15,
     borderRadius: 50,
-    position: 'absolute',
-    bottom: 150,
-    right: 20,
-    justifyContent: 'center',
+    // position: 'absolute',
+    // bottom: 150,
+    // right: 20,
+    // justifyContent: 'center',
     alignItems: 'center',
   },
   modal: {

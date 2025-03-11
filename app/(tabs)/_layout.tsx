@@ -16,14 +16,14 @@ export default function TabLayout() {
   const activeColor = '#FF7B24';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: activeColor,
           tabBarInactiveTintColor: textColor,
           headerShown: false,
           tabBarButton: HapticTab,
-          tabBarBackground: TabBarBackground,
+          //tabBarBackground: TabBarBackground,
           tabBarStyle: Platform.select({
             ios: {
               position: 'relative',
@@ -82,14 +82,14 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#212121',
+    //backgroundColor: '#212121',
   },
   iconContainer: {
     alignItems: 'center',
@@ -104,8 +104,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2,
   },
-  screenContainer: {
-    flex: 1,
-    backgroundColor: '#212121',
-  },
+  // screenContainer: {
+  //   flex: 1,
+  //   //backgroundColor: '#212121',
+  // },
 });

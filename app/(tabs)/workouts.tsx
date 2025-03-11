@@ -57,7 +57,7 @@ export default function WorkoutsPage() {
       </View>
 
       <TouchableOpacity onPress={() => setIsModalVisible(true)} style={styles.addButton}>
-        <Text style={styles.addButtonText}>Make a new routine</Text>
+        <Text style={styles.addButtonText}>New Routine</Text>
       </TouchableOpacity>
 
       {isModalVisible && (
@@ -160,12 +160,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF7B24',
     padding: 15,
     borderRadius: 10,
-    marginTop: 30,
     alignItems: 'center',
   },
   addButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   modal: {
     position: 'absolute',

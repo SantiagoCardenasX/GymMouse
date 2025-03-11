@@ -1,5 +1,8 @@
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Image, Button, TouchableOpacity } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
 
 const motivationalQuotes = [
   "The only bad workout is the one that didn't happen.",
@@ -24,24 +27,77 @@ export default function HomeScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       {/* Top Welcome Section */}
       <View style={styles.welcomeSection}>
-        <Text style={styles.welcomeText}>Welcome, username!</Text>
+      <Image
+            source={{
+              uri: "https://images.pexels.com/photos/837358/pexels-photo-837358.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+            }}
+            style={styles.userIcon}
+          />
+          <View style={styles.welcomeTextContainer}>
+            <Text style={styles.helloText}>Hello,</Text>
+            <Text style={styles.welcomeText}>MICHEAL BERNADO</Text>
+          </View>
       </View>
 
       {/* Motivational Quote Section */}
       <View style={styles.quoteSection}>
+      <Image
+            source={{
+              uri: "https://images.pexels.com/photos/841130/pexels-photo-841130.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
+            }}
+            style={styles.quoteBackground}
+          />
         <Text style={styles.quoteText}>"{quote}"</Text>
+      </View>
+
+            {/* Summarize Section */}
+      <View style={styles.summariesSection}>
+        <Text style={styles.summariesText}>SUMMARIZE</Text>
+        <View style={styles.summariesContainer}>
+          <View style={styles.summaryItem}>
+          <MaterialCommunityIcons name="walk" size={30} color="#FF7B24" />
+            <Text style={styles.summaryValue}>3.234</Text>
+            <Text style={styles.summaryLabel}>STEPS</Text>
+          </View>
+          <View style={styles.summaryItem}>
+          <SimpleLineIcons name="fire" size={28} color="#FF7B24" />
+            <Text style={styles.summaryValue}>2.323</Text>
+            <Text style={styles.summaryLabel}>CALORIES</Text>
+          </View>
+          <View style={styles.summaryItem}>
+          <IconSymbol name="heart" size={30} color="#FF7B24" />
+            <Text style={styles.summaryValue}>10</Text>
+            <Text style={styles.summaryLabel}>HOURS</Text>
+          </View>
+        </View>
       </View>
 
       {/* Fitness Goal Section */}
       <View style={styles.goalSection}>
-        <Text style={styles.goalTitle}>Set your fitness goal:</Text>
-        <TextInput
+        <Text style={styles.goalTitle}>YOUR FITNESS GOALS</Text>
+        {/* <TextInput
           style={styles.input}
-          placeholder="Enter your goal here... (e.g., 'Lose 10 lbs,' 'Work out 5 days a week')"
+          placeholder="Work out 5 days a week"
           placeholderTextColor="#888"
           value={fitnessGoal}
           onChangeText={setFitnessGoal}
-        />
+        /> */}
+        <View style={styles.goalItem}>
+          <Text style={styles.goalText}>Work out 5 days a week</Text>
+          <TouchableOpacity>
+            <MaterialCommunityIcons name="circle-edit-outline" size={24} color="#FF7B24" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.goalItem}>
+          <Text style={styles.goalText}>Swimming twice a week</Text>
+          <TouchableOpacity>
+            <MaterialCommunityIcons name="circle-edit-outline" size={24} color="#FF7B24" />
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity style={styles.setGoalButton}>
+          <Text style={styles.setGoalButtonText}>+ Set New Goal</Text>
+        </TouchableOpacity>
+
       </View>
     </ScrollView>
   );
@@ -56,17 +112,34 @@ const styles = StyleSheet.create({
     paddingTop: 100,
   },
   welcomeSection: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 20,
   },
+
+  welcomeTextContainer: {
+    marginLeft
+    : 10,
+  },
+
   welcomeText: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 20,
     color: '#EBEBEB',
+    paddingLeft: 5,
+    fontWeight: 'bold',
+  },
+
+  helloText: {
+    fontSize: 18,
+    color: 'gray',
+    paddingLeft: 5,
+    
   },
   quoteSection: {
-    marginVertical: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    height: 200,
   },
   quoteText: {
     fontSize: 18,
@@ -77,13 +150,24 @@ const styles = StyleSheet.create({
   },
   goalSection: {
     marginTop: 40,
-    alignItems: 'center',
   },
   goalTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#EBEBEB',
     marginBottom: 10,
+  },
+  // logo: {
+  //   width: 100,
+  //   height: 100,
+  //   resizeMode: 'contain',
+  //   alignSelf: 'center',
+  //   marginBottom: 20,
+  // },
+  userIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 50,
   },
   input: {
     height: 50,
@@ -95,4 +179,75 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 10,
   },
+  quoteBackground: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    borderRadius: 15,
+  },
+  summariesSection: {
+    marginTop: 40,
+  },
+  summariesText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#EBEBEB',
+    marginBottom: 10,
+  },
+  summariesContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  summaryItem: {
+    flex: 1,
+    backgroundColor: '#333333',
+    padding: 20,
+    borderRadius: 15,
+    margin: 5,
+    alignItems: 'center',
+  },
+  summaryValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#EBEBEB',
+    paddingTop: 5,
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: 'gray',
+    marginTop: 10,
+  },
+
+  setGoalButton: {
+    backgroundColor: '#FF7B24',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  setGoalButtonText: {
+    color: '#EBEBEB',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
+  goalItem: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#333333',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  goalText: {
+    color: '#EBEBEB',
+    fontSize: 16,
+
+  },
+
+
 });

@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 
@@ -9,7 +9,8 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      {/* GYM MOUSE logo will go here */}
+      <Image source={require('../assets/images/logo.png')} style={styles.logo} />
+
       <Text style={styles.title}>Welcome to Gym Mouse</Text>
 
       <TextInput
@@ -31,8 +32,8 @@ export default function Index() {
       <TouchableOpacity style={styles.button} onPress={() => router.push('/(tabs)/home')}>
         <Text style={styles.buttonText}>Sign In</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => router.push('/signup')}>
-        <Text style={styles.buttonText}>Sign Up</Text>
+      <TouchableOpacity style={styles.buttonSignUp} onPress={() => router.push('/signup')}>
+        <Text style={styles.buttonSignUpText}>Sign Up</Text>
       </TouchableOpacity>
     </View>
   );
@@ -78,4 +79,26 @@ const styles = StyleSheet.create({
     fontSize: 16, 
     fontWeight: 'bold' 
   },
+
+  buttonSignUp: {
+    width: '80%',
+    backgroundColor: '#333333',
+    paddingVertical: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginVertical: 5,
+  },
+
+  buttonSignUpText: { 
+    color: '#EBEBEB',
+    fontSize: 16, 
+    fontWeight: 'bold' 
+  },
+  
+  logo: {
+    width: 150,
+    height: 150,
+    marginBottom: 20,
+  },
+
 });
