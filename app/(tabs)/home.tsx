@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
+import { Dimensions } from "react-native";
 
 const motivationalQuotes = [
   "The only bad workout is the one that didn't happen.",
@@ -33,7 +34,6 @@ export default function HomeScreen() {
       motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
     setQuote(randomQuote);
   }, []); // Empty dependency array ensures this only runs once
-
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -67,7 +67,7 @@ export default function HomeScreen() {
         <Text style={styles.summariesText}>SUMMARIZE</Text>
         <View style={styles.summariesContainer}>
           <View style={styles.summaryItem}>
-            <MaterialCommunityIcons name="walk" size={30} color="#FF7B24" />
+            <MaterialCommunityIcons name="walk" size={28} color="#FF7B24" />
             <Text style={styles.summaryValue}>3.234</Text>
             <Text style={styles.summaryLabel}>STEPS</Text>
           </View>
@@ -77,7 +77,7 @@ export default function HomeScreen() {
             <Text style={styles.summaryLabel}>CALORIES</Text>
           </View>
           <View style={styles.summaryItem}>
-            <IconSymbol name="heart" size={30} color="#FF7B24" />
+            <SimpleLineIcons name="heart" size={28} color="#FF7B24" />
             <Text style={styles.summaryValue}>10</Text>
             <Text style={styles.summaryLabel}>HOURS</Text>
           </View>
@@ -130,7 +130,6 @@ export default function HomeScreen() {
               placeholder="Enter your goal"
               value={fitnessGoal}
               onChangeText={setFitnessGoal}
-    
             />
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.addSetButton}>
@@ -152,11 +151,11 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: "#212121",
     paddingHorizontal: 20,
-    paddingVertical: 30,
-    paddingTop: 100,
+    paddingTop: 30, //Was 100, if not rendering properly, change back to 100
+    paddingBottom: 20,
   },
   welcomeSection: {
     display: "flex",
@@ -184,7 +183,7 @@ const styles = StyleSheet.create({
   quoteSection: {
     justifyContent: "center",
     alignItems: "center",
-    height: 200,
+    minHeight: 200,
   },
   quoteText: {
     fontSize: 18,
@@ -254,13 +253,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   summaryValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#EBEBEB",
     paddingTop: 5,
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: 10,
     color: "gray",
     marginTop: 10,
   },
@@ -350,8 +349,8 @@ const styles = StyleSheet.create({
   },
   inputGoal: {
     height: 50,
-    backgroundColor: '#444444',
-    color: '#EBEBEB',
+    backgroundColor: "#444444",
+    color: "#EBEBEB",
     marginBottom: 15,
     borderRadius: 10,
     paddingLeft: 10,
