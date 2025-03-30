@@ -1,11 +1,20 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { app } from '../firebaseConfig';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function Index() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  function signup () {
+    const auth = getAuth(app);
+    createUserWithEmailAndPassword(auth, email, password)
+    .then((res) => console.log(res))
+    .catch((error) => console.log(error.message));
+  }
 
   return (
     <View style={styles.container}>
@@ -36,7 +45,7 @@ export default function Index() {
       <TouchableOpacity style={styles.button} onPress={() => router.push('/(tabs)/home')}>
         <Text style={styles.buttonText}>Sign In</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.buttonSignUp} onPress={() => router.push('/signup')}>
+      <TouchableOpacity style={styles.buttonSignUp} onPress={signup}>
         <Text style={styles.buttonSignUpText}>Sign Up</Text>
       </TouchableOpacity>
     </View>

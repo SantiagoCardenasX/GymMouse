@@ -6,14 +6,14 @@ import { getAuth } from "firebase/auth";
  
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyAs9in8RAexyuu9wox7xEuCLAc1svWjy9g",
+  authDomain: "gymmouse-1af11.firebaseapp.com",
+  projectId: "gymmouse-1af11",
+  storageBucket: "gymmouse-1af11.firebasestorage.app",
+  messagingSenderId: "465121065851",
+  appId: "1:465121065851:web:d1460102d30840c0cadbde",
 };
  
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
