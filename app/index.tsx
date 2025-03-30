@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 export default function Index() {
   const router = useRouter();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   return (
@@ -15,10 +15,14 @@ export default function Index() {
 
       <TextInput
         style={styles.input}
-        placeholder="Username"
+        placeholder="Email"
         placeholderTextColor="#999"
-        value={username}
-        onChangeText={setUsername}
+        value={email}
+        onChangeText={setEmail}
+        keyboardType='email-address'
+        autoCapitalize='none'
+        autoCorrect={false}
+        textContentType='emailAddress'
       />
       <TextInput
         style={styles.input}
