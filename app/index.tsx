@@ -1,104 +1,219 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { app } from "../firebaseConfig";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 
 export default function Index() {
   const router = useRouter();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
+
+  const handleAuth = async (isSignUpAction: boolean) => {
+    if (!email || !password) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const auth = getAuth(app);
+      if (isSignUpAction) {
+        await createUserWithEmailAndPassword(auth, email, password);
+        router.push("/(tabs)/home");
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+        router.push("/(tabs)/home");
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        handleAuthError((error as any).code);
+      } else {
+        setError("An unexpected error occurred.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAuthError = (errorCode: any) => {
+    switch (errorCode) {
+      case "auth/invalid-credential":
+      case "auth/wrong-password":
+        setError("Invalid email or password");
+        break;
+      case "auth/user-not-found":
+        setError("No account found with this email");
+        break;
+      case "auth/email-already-in-use":
+        setError("Email already in use");
+        break;
+      case "auth/weak-password":
+        setError("Password should be at least 6 characters");
+        break;
+      case "auth/invalid-email":
+        setError("Invalid email address");
+        break;
+      default:
+        setError("Something went wrong. Please try again.");
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <Image source={require('../assets/images/logo.png')} style={styles.logo} />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <View style={styles.innerContainer}>
+        <Image
+          source={require("../assets/images/logo.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
 
-      <Text style={styles.title}>Welcome to Gym Mouse</Text>
+        <Text style={styles.title}>Welcome to Gym Mouse</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        placeholderTextColor="#999"
-        value={username}
-        onChangeText={setUsername}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#999"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#999"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="emailAddress"
+          editable={!loading}
+        />
 
-      <TouchableOpacity style={styles.button} onPress={() => router.push('/(tabs)/home')}>
-        <Text style={styles.buttonText}>Sign In</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.buttonSignUp} onPress={() => router.push('/signup')}>
-        <Text style={styles.buttonSignUpText}>Sign Up</Text>
-      </TouchableOpacity>
-    </View>
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          placeholderTextColor="#999"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          editable={!loading}
+        />
+
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+        <TouchableOpacity
+          style={[styles.button, loading && styles.disabledButton]}
+          onPress={() => handleAuth(false)}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#EBEBEB" />
+          ) : (
+            <Text style={styles.buttonText}>Sign In</Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.buttonSignUp, loading && styles.disabledButton]}
+          onPress={() => handleAuth(true)}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#EBEBEB" />
+          ) : (
+            <Text style={styles.buttonSignUpText}>Sign Up</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center',
-    backgroundColor: '#212121',
+  container: {
+    flex: 1,
+    backgroundColor: "#212121",
   },
-
-  title: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
+  innerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
     marginBottom: 20,
-    color: '#EBEBEB',
+    color: "#EBEBEB",
+    textAlign: "center",
   },
-
   input: {
-    width: '80%',
+    width: "100%",
+    maxWidth: 400,
     height: 50,
-    backgroundColor: '#333333',
+    backgroundColor: "#333333",
     borderRadius: 10,
     paddingHorizontal: 15,
     fontSize: 16,
-    color: '#EBEBEB',
+    color: "#EBEBEB",
     marginBottom: 10,
   },
-
   button: {
-    width: '80%',
-    backgroundColor: '#FF7B24',
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "#FF7B24",
     paddingVertical: 15,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: 5,
   },
-
-  buttonText: { 
-    color: '#EBEBEB',
-    fontSize: 16, 
-    fontWeight: 'bold' 
-  },
-
   buttonSignUp: {
-    width: '80%',
-    backgroundColor: '#333333',
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "#333333",
     paddingVertical: 15,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: 5,
   },
-
-  buttonSignUpText: { 
-    color: '#EBEBEB',
-    fontSize: 16, 
-    fontWeight: 'bold' 
+  buttonText: {
+    color: "#EBEBEB",
+    fontSize: 16,
+    fontWeight: "bold",
   },
-  
+  buttonSignUpText: {
+    color: "#EBEBEB",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
   logo: {
     width: 150,
     height: 150,
     marginBottom: 20,
   },
-
+  errorText: {
+    color: "#ff5252",
+    marginBottom: 10,
+    textAlign: "center",
+    paddingHorizontal: 20,
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
 });
