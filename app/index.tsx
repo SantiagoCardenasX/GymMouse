@@ -12,11 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { app } from "../firebaseConfig";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
 export default function Index() {
   const router = useRouter();
@@ -24,9 +20,8 @@ export default function Index() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
 
-  const handleAuth = async (isSignUpAction: boolean) => {
+  const handleAuth = async () => {
     if (!email || !password) {
       setError("Please fill in all fields");
       return;
@@ -37,13 +32,8 @@ export default function Index() {
 
     try {
       const auth = getAuth(app);
-      if (isSignUpAction) {
-        await createUserWithEmailAndPassword(auth, email, password);
-        router.push("/(tabs)/home");
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-        router.push("/(tabs)/home");
-      }
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push("/(tabs)/home");
     } catch (error) {
       if (error instanceof Error) {
         handleAuthError((error as any).code);
@@ -119,7 +109,7 @@ export default function Index() {
 
         <TouchableOpacity
           style={[styles.button, loading && styles.disabledButton]}
-          onPress={() => handleAuth(false)}
+          onPress={() => handleAuth()}
           disabled={loading}
         >
           {loading ? (
@@ -131,7 +121,7 @@ export default function Index() {
 
         <TouchableOpacity
           style={[styles.buttonSignUp, loading && styles.disabledButton]}
-          onPress={() => handleAuth(true)}
+          onPress={() => router.push("/signup")}
           disabled={loading}
         >
           {loading ? (
