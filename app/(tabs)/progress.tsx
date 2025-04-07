@@ -6,14 +6,14 @@ export default function ProgressPage() {
   const [measurements, setMeasurements] = useState<{ title: string; value: string; date: string }[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newMeasurement, setNewMeasurement] = useState({ title: '', value: '' });
-
+  const [isTitleEditable, setIsTitleEditable] = useState(true);
 
   const handleAddMeasurement = () => {
     if (!newMeasurement.title || !newMeasurement.value) {
       Alert.alert('Error', 'Please fill in both title and value!');
       return;
     }
-    
+
     const currentDate = new Date().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -28,9 +28,10 @@ export default function ProgressPage() {
     setMeasurements(updatedMeasurements);
     setNewMeasurement({ title: '', value: '' });
     setIsModalVisible(false);
+    setIsTitleEditable(true); 
   };
 
-  // Function to group measurements by title
+  // Group measurements by title
   const groupMeasurementsByTitle = (): { [key: string]: { title: string; value: string; date: string }[] } => {
     return measurements.reduce((acc: { [key: string]: { title: string; value: string; date: string }[] }, measurement) => {
       if (!acc[measurement.title]) {
@@ -39,6 +40,18 @@ export default function ProgressPage() {
       acc[measurement.title].push(measurement);
       return acc;
     }, {});
+  };
+
+  const openModalForNewTitle = () => {
+    setIsTitleEditable(true);
+    setNewMeasurement({ title: '', value: '' });
+    setIsModalVisible(true);
+  };
+
+  const openModalForExistingTitle = (title: string) => {
+    setIsTitleEditable(false);
+    setNewMeasurement({ title, value: '' });
+    setIsModalVisible(true);
   };
 
   return (
@@ -52,7 +65,12 @@ export default function ProgressPage() {
       <View style={styles.measurementsList}>
         {Object.entries(groupMeasurementsByTitle()).map(([title, measurementsGroup], index) => (
           <View key={index} style={styles.measurementGroup}>
-            <Text style={styles.measurementTitle}>{title}</Text>
+            <View style={styles.titleRow}>
+              <Text style={styles.measurementTitle}>{title}</Text>
+              <TouchableOpacity onPress={() => openModalForExistingTitle(title)} style={styles.smallAddButton}>
+                <FontAwesome5 name="plus" size={12} color="white" />
+              </TouchableOpacity>
+            </View>
             {measurementsGroup.map((measurement, i) => (
               <View key={i} style={styles.measurementItem}>
                 <Text style={styles.measurementText}>
@@ -64,22 +82,23 @@ export default function ProgressPage() {
         ))}
       </View>
 
-      {/* Add Measurement Button */}
+      {/* Add New Measurement Title */}
       <View style={styles.addButtonContainer}>
-      <TouchableOpacity style={styles.addButton} onPress={() => setIsModalVisible(true)}>
-        <FontAwesome5 name="plus" size={20} color="white" />
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.addButton} onPress={openModalForNewTitle}>
+          <FontAwesome5 name="plus" size={20} color="white" />
+        </TouchableOpacity>
       </View>
 
-      {/* Modal for Adding Measurement */}
+      {/* Modal */}
       {isModalVisible && (
         <View style={styles.modal}>
           <Text style={styles.modalTitle}>Add a New Measurement</Text>
-          
+
           <TextInput
-            style={styles.input}
+            style={[styles.input, !isTitleEditable && styles.disabledInput]}
             placeholder="Measurement Title (e.g., Bodyweight)"
             value={newMeasurement.title}
+            editable={isTitleEditable}
             onChangeText={(text) => setNewMeasurement({ ...newMeasurement, title: text })}
           />
           <TextInput
@@ -88,11 +107,12 @@ export default function ProgressPage() {
             value={newMeasurement.value}
             onChangeText={(text) => setNewMeasurement({ ...newMeasurement, value: text })}
           />
+
           <View style={styles.modalActions}>
             <TouchableOpacity style={styles.addSetButton} onPress={handleAddMeasurement}>
               <Text style={styles.buttonText}>Add</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelButton} onPress={() => setIsModalVisible(false)}>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => { setIsModalVisible(false); setIsTitleEditable(true); }}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -124,11 +144,21 @@ const styles = StyleSheet.create({
   measurementGroup: {
     marginBottom: 20,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   measurementTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FF7B24',
-    marginBottom: 10,
+    marginRight: 10,
+  },
+  smallAddButton: {
+    backgroundColor: '#FF7B24',
+    padding: 5,
+    borderRadius: 5,
   },
   measurementItem: {
     backgroundColor: '#333333',
@@ -140,20 +170,14 @@ const styles = StyleSheet.create({
     color: '#EBEBEB',
     fontSize: 14,
   },
-
   addButtonContainer: {
     flex: 1,
     alignItems: 'center',
-    },
-    
+  },
   addButton: {
     backgroundColor: '#FF7B24',
     padding: 15,
     borderRadius: 50,
-    // position: 'absolute',
-    // bottom: 150,
-    // right: 20,
-    // justifyContent: 'center',
     alignItems: 'center',
   },
   modal: {
@@ -179,6 +203,10 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     borderRadius: 10,
     paddingLeft: 10,
+  },
+  disabledInput: {
+    backgroundColor: '#555555',
+    color: '#BBBBBB',
   },
   modalActions: {
     marginTop: 20,
