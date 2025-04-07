@@ -1,18 +1,18 @@
-import { IconSymbol } from "@/components/ui/IconSymbol";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
-  TextInput,
-  StyleSheet,
-  ScrollView,
   Image,
-  Button,
   TouchableOpacity,
+  TextInput,
+  Alert,
+  Platform,
+  StyleSheet,
 } from "react-native";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
-import { Dimensions } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { useFocusEffect } from '@react-navigation/native';
+import ConfettiCannon from 'react-native-confetti-cannon';
 
 const motivationalQuotes = [
   "The only bad workout is the one that didn't happen.",
@@ -24,20 +24,174 @@ const motivationalQuotes = [
 ];
 
 export default function HomeScreen() {
-  const [fitnessGoal, setFitnessGoal] = useState("");
   const [quote, setQuote] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [presetWorkouts, setPresetWorkouts] = useState([]);
+  const [todayWorkouts, setTodayWorkouts] = useState<any[]>([]);
+  const [completedWorkouts, setCompletedWorkouts] = useState<number[]>([]);
+  const [selectedWorkouts, setSelectedWorkouts] = useState<number[]>([]);
+  const [goalInput, setGoalInput] = useState("");
+  const [goals, setGoals] = useState<string[]>([]);
+  const confettiRef = useRef<any>(null);
 
-  // Set a random quote when the component mounts
+  const todayDate = new Date().toDateString();
+
+  const isWorkoutCompleted =
+    todayWorkouts.length > 0 &&
+    completedWorkouts.length === todayWorkouts.length;
+
   useEffect(() => {
     const randomQuote =
       motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
     setQuote(randomQuote);
-  }, []); // Empty dependency array ensures this only runs once
+
+    loadPresetWorkouts();
+    loadGoals();
+    checkResetDailyWorkouts();
+  }, []);
+
+  useEffect(() => {
+    saveTodayWorkouts();
+  }, [todayWorkouts, completedWorkouts]);
+
+  useEffect(() => {
+    saveGoals();
+  }, [goals]);
+
+  useEffect(() => {
+    if (isWorkoutCompleted && confettiRef.current) {
+      confettiRef.current.start();
+    }
+  }, [isWorkoutCompleted]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadPresetWorkouts();
+    }, [])
+  );
+
+  const loadPresetWorkouts = async () => {
+    const saved = await AsyncStorage.getItem("workoutPresets");
+    if (saved) {
+      setPresetWorkouts(JSON.parse(saved));
+    }
+  };
+
+  const saveTodayWorkouts = async () => {
+    const data = {
+      date: todayDate,
+      workouts: todayWorkouts,
+      completed: completedWorkouts,
+    };
+    await AsyncStorage.setItem("todayWorkouts", JSON.stringify(data));
+  };
+
+  const checkResetDailyWorkouts = async () => {
+    const saved = await AsyncStorage.getItem("todayWorkouts");
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (data.date === todayDate) {
+        setTodayWorkouts(data.workouts || []);
+        setCompletedWorkouts(data.completed || []);
+      } else {
+        setTodayWorkouts([]);
+        setCompletedWorkouts([]);
+        await AsyncStorage.removeItem("todayWorkouts");
+      }
+    }
+  };
+
+  const loadGoals = async () => {
+    const savedGoals = await AsyncStorage.getItem("userGoals");
+    if (savedGoals) {
+      setGoals(JSON.parse(savedGoals));
+    }
+  };
+
+  const saveGoals = async () => {
+    await AsyncStorage.setItem("userGoals", JSON.stringify(goals));
+  };
+
+  const handleSelectWorkout = (index: number) => {
+    if (selectedWorkouts.includes(index)) {
+      setSelectedWorkouts(selectedWorkouts.filter((i) => i !== index));
+    } else {
+      setSelectedWorkouts([...selectedWorkouts, index]);
+    }
+  };
+
+  const handleSaveTodayWorkouts = () => {
+    if (selectedWorkouts.length === 0) {
+      Alert.alert("No Workouts Selected", "Please select at least one workout.");
+      return;
+    }
+    const selected = selectedWorkouts.map((index) => presetWorkouts[index]);
+    setTodayWorkouts(selected);
+    setCompletedWorkouts([]);
+    setSelectedWorkouts([]);
+    setIsModalVisible(false);
+  };
+
+  const handleCompleteWorkout = (index: number) => {
+    if (!completedWorkouts.includes(index)) {
+      setCompletedWorkouts([...completedWorkouts, index]);
+    }
+  };
+
+  const handleAddGoal = () => {
+    if (!goalInput.trim()) return;
+    setGoals([...goals, goalInput.trim()]);
+    setGoalInput("");
+  };
+
+  const handleDeleteGoal = (index: number) => {
+    Alert.alert(
+      "Delete Goal",
+      "Are you sure you want to delete this goal?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            const updatedGoals = goals.filter((_, i) => i !== index);
+            setGoals(updatedGoals);
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Top Welcome Section */}
+    <KeyboardAwareScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+      enableOnAndroid
+      extraScrollHeight={Platform.OS === "ios" ? 100 : 120}
+    >
+      {/* Confetti animation component */}
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 999,
+          pointerEvents: 'none',
+        }}
+      >
+        <ConfettiCannon
+          count={150}
+          origin={{ x: -10, y: 0 }}
+          autoStart={false}
+          ref={confettiRef}
+          fadeOut={true}
+        />
+      </View>
+
+      {/* Welcome Section */}
       <View style={styles.welcomeSection}>
         <Image
           source={{
@@ -51,7 +205,7 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Motivational Quote Section */}
+      {/* Motivational Quote */}
       <View style={styles.quoteSection}>
         <Image
           source={{
@@ -62,123 +216,167 @@ export default function HomeScreen() {
         <Text style={styles.quoteText}>"{quote}"</Text>
       </View>
 
-      {/* Summarize Section */}
-      <View style={styles.summariesSection}>
-        <Text style={styles.summariesText}>SUMMARIZE</Text>
-        <View style={styles.summariesContainer}>
-          <View style={styles.summaryItem}>
-            <MaterialCommunityIcons name="walk" size={28} color="#FF7B24" />
-            <Text style={styles.summaryValue}>3.234</Text>
-            <Text style={styles.summaryLabel}>STEPS</Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <SimpleLineIcons name="fire" size={28} color="#FF7B24" />
-            <Text style={styles.summaryValue}>2.323</Text>
-            <Text style={styles.summaryLabel}>CALORIES</Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <SimpleLineIcons name="heart" size={28} color="#FF7B24" />
-            <Text style={styles.summaryValue}>10</Text>
-            <Text style={styles.summaryLabel}>HOURS</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Fitness Goal Section */}
+      {/* Daily Workout Section */}
       <View style={styles.goalSection}>
-        <Text style={styles.goalTitle}>YOUR FITNESS GOALS</Text>
-        {/* <TextInput
-          style={styles.input}
-          placeholder="Work out 5 days a week"
-          placeholderTextColor="#888"
-          value={fitnessGoal}
-          onChangeText={setFitnessGoal}
-        /> */}
-        <View style={styles.goalItem}>
-          <Text style={styles.goalText}>Work out 5 days a week</Text>
-          <TouchableOpacity>
-            <MaterialCommunityIcons
-              name="circle-edit-outline"
-              size={24}
-              color="#FF7B24"
-            />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.goalItem}>
-          <Text style={styles.goalText}>Swimming twice a week</Text>
-          <TouchableOpacity>
-            <MaterialCommunityIcons
-              name="circle-edit-outline"
-              size={24}
-              color="#FF7B24"
-            />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.goalTitle}>DAILY WORKOUT</Text>
+
+        {todayWorkouts.length === 0 ? (
+          <Text style={styles.noRoutinesText}>No workouts selected yet.</Text>
+        ) : (
+          todayWorkouts.map((workout, index) => (
+            <View key={index} style={styles.goalItem}>
+              <Text style={styles.goalText}>
+                {workout.name} - {workout.sets} sets x {workout.reps} reps
+              </Text>
+              <TouchableOpacity
+                onPress={() => handleCompleteWorkout(index)}
+                style={{
+                  backgroundColor: completedWorkouts.includes(index)
+                    ? "#FF7B24"
+                    : "#EBEBEB",
+                  padding: 5,
+                  borderRadius: 5,
+                }}
+              >
+                <Text
+                  style={{
+                    color: completedWorkouts.includes(index)
+                      ? "#fff"
+                      : "#212121",
+                  }}
+                >
+                  {completedWorkouts.includes(index) ? "Done" : "Complete"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ))
+        )}
+
+        {todayWorkouts.length > 0 && (
+          <Text style={styles.progressText}>
+            {completedWorkouts.length}/{todayWorkouts.length} Completed
+            {isWorkoutCompleted && " ✅"}
+          </Text>
+        )}
+
         <TouchableOpacity
           style={styles.setGoalButton}
           onPress={() => setIsModalVisible(true)}
         >
-          <Text style={styles.setGoalButtonText}>+ Set New Goal</Text>
+          <Text style={styles.setGoalButtonText}>+ Select Today's Workouts</Text>
         </TouchableOpacity>
-
-        {isModalVisible && (
-          <View style={styles.modal}>
-            <Text style={styles.modalTitle}>New Goal</Text>
-
-            <TextInput
-              style={styles.inputGoal}
-              placeholder="Enter your goal"
-              value={fitnessGoal}
-              onChangeText={setFitnessGoal}
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.addSetButton}>
-                <Text style={styles.buttonText}>Add</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setIsModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
       </View>
-    </ScrollView>
+
+      {/* Overall Goals Section */}
+      <View style={styles.goalSection}>
+        <Text style={styles.goalTitle}>YOUR GOALS</Text>
+
+        {goals.map((goal, index) => (
+          <View key={index} style={styles.goalItem}>
+            <Text style={styles.goalText}>{goal}</Text>
+            <TouchableOpacity onPress={() => handleDeleteGoal(index)}>
+              <Text style={{ color: "#FF7B24", fontWeight: "bold" }}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        <TextInput
+          style={styles.inputGoalLarge}
+          placeholder="Write your goal!"
+          placeholderTextColor="#888"
+          value={goalInput}
+          onChangeText={setGoalInput}
+          multiline
+          numberOfLines={4}
+        />
+        <TouchableOpacity
+          style={styles.setGoalButton}
+          onPress={handleAddGoal}
+        >
+          <Text style={styles.setGoalButtonText}>Add</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Modal: Select Workouts */}
+      {isModalVisible && (
+        <View style={styles.modal}>
+          <Text style={styles.modalTitle}>Select Workouts for Today</Text>
+          {presetWorkouts.length === 0 ? (
+            <Text style={styles.noRoutinesText}>
+              No presets found. Add workouts in the Workouts page!
+            </Text>
+          ) : (
+            presetWorkouts.map((workout: any, index: number) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.goalItem,
+                  {
+                    backgroundColor: selectedWorkouts.includes(index)
+                      ? "#FF7B24"
+                      : "#333333",
+                  },
+                ]}
+                onPress={() => handleSelectWorkout(index)}
+              >
+                <Text style={styles.goalText}>
+                  {workout.name} - {workout.sets} sets x {workout.reps} reps
+                </Text>
+              </TouchableOpacity>
+            ))
+          )}
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              onPress={handleSaveTodayWorkouts}
+              style={styles.addSetButton}
+            >
+              <Text style={styles.buttonText}>Save</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setIsModalVisible(false)}
+              style={styles.cancelButton}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    </KeyboardAwareScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     backgroundColor: "#212121",
     paddingHorizontal: 20,
-    paddingTop: 30, //Was 100, if not rendering properly, change back to 100
+    paddingTop: 30,
     paddingBottom: 20,
   },
   welcomeSection: {
-    display: "flex",
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 20,
   },
-
+  userIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 50,
+  },
   welcomeTextContainer: {
     marginLeft: 10,
   },
-
+  helloText: {
+    fontSize: 18,
+    color: "gray",
+    paddingLeft: 5,
+  },
   welcomeText: {
     fontSize: 20,
     color: "#EBEBEB",
     paddingLeft: 5,
     fontWeight: "bold",
-  },
-
-  helloText: {
-    fontSize: 18,
-    color: "gray",
-    paddingLeft: 5,
   },
   quoteSection: {
     justifyContent: "center",
@@ -192,6 +390,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 20,
   },
+  quoteBackground: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+    borderRadius: 15,
+  },
   goalSection: {
     marginTop: 40,
   },
@@ -201,84 +406,7 @@ const styles = StyleSheet.create({
     color: "#EBEBEB",
     marginBottom: 10,
   },
-  // logo: {
-  //   width: 100,
-  //   height: 100,
-  //   resizeMode: 'contain',
-  //   alignSelf: 'center',
-  //   marginBottom: 20,
-  // },
-  userIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 50,
-  },
-  input: {
-    height: 50,
-    width: "100%",
-    backgroundColor: "#333333",
-    borderRadius: 10,
-    color: "#EBEBEB",
-    paddingLeft: 15,
-    fontSize: 16,
-    marginTop: 10,
-  },
-  quoteBackground: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-    borderRadius: 15,
-  },
-  summariesSection: {
-    marginTop: 40,
-  },
-  summariesText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#EBEBEB",
-    marginBottom: 10,
-  },
-  summariesContainer: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  summaryItem: {
-    flex: 1,
-    backgroundColor: "#333333",
-    padding: 20,
-    borderRadius: 15,
-    margin: 5,
-    alignItems: "center",
-  },
-  summaryValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#EBEBEB",
-    paddingTop: 5,
-  },
-  summaryLabel: {
-    fontSize: 10,
-    color: "gray",
-    marginTop: 10,
-  },
-
-  setGoalButton: {
-    backgroundColor: "#FF7B24",
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 10,
-    alignItems: "center",
-  },
-  setGoalButtonText: {
-    color: "#EBEBEB",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-
   goalItem: {
-    display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -291,50 +419,34 @@ const styles = StyleSheet.create({
     color: "#EBEBEB",
     fontSize: 16,
   },
-  measurementsList: {
-    marginVertical: 20,
-  },
-  measurementGroup: {
-    marginBottom: 20,
-  },
-  measurementTitle: {
-    fontSize: 18,
+  progressText: {
+    color: "#EBEBEB",
+    fontSize: 16,
     fontWeight: "bold",
-    color: "#FF7B24",
     marginBottom: 10,
   },
-  measurementItem: {
-    backgroundColor: "#333333",
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 5,
-  },
-  measurementText: {
-    color: "#EBEBEB",
-    fontSize: 14,
-  },
-
-  addButtonContainer: {
-    flex: 1,
-    alignItems: "center",
-  },
-
-  addButton: {
+  setGoalButton: {
     backgroundColor: "#FF7B24",
     padding: 15,
-    borderRadius: 50,
-    // position: 'absolute',
-    // bottom: 150,
-    // right: 20,
-    // justifyContent: 'center',
+    borderRadius: 10,
     alignItems: "center",
+    width: "100%", 
+    marginBottom: 10,
+  },
+  setGoalButtonText: {
+    color: "#EBEBEB",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  noRoutinesText: {
+    color: "#888",
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 10,
   },
   modal: {
     position: "absolute",
     top: "15%",
-    //bottom: "100%",
-    //left: "10%",
-    //right: "10%",
     backgroundColor: "#333333",
     padding: 20,
     borderRadius: 10,
@@ -346,14 +458,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#EBEBEB",
     marginBottom: 20,
-  },
-  inputGoal: {
-    height: 50,
-    backgroundColor: "#444444",
-    color: "#EBEBEB",
-    marginBottom: 15,
-    borderRadius: 10,
-    paddingLeft: 10,
   },
   modalActions: {
     marginTop: 20,
@@ -387,4 +491,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+  inputGoalLarge: {
+    backgroundColor: "#333333",
+    color: "#EBEBEB",
+    borderRadius: 10,
+    padding: 15,
+    textAlignVertical: "top", 
+    marginBottom: 10,
+    fontSize: 16,
+  },
+
 });
+

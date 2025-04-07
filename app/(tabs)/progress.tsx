@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  StyleSheet,
+} from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 
 export default function ProgressPage() {
@@ -28,10 +36,9 @@ export default function ProgressPage() {
     setMeasurements(updatedMeasurements);
     setNewMeasurement({ title: '', value: '' });
     setIsModalVisible(false);
-    setIsTitleEditable(true); 
+    setIsTitleEditable(true);
   };
 
-  // Group measurements by title
   const groupMeasurementsByTitle = (): { [key: string]: { title: string; value: string; date: string }[] } => {
     return measurements.reduce((acc: { [key: string]: { title: string; value: string; date: string }[] }, measurement) => {
       if (!acc[measurement.title]) {
@@ -54,6 +61,27 @@ export default function ProgressPage() {
     setIsModalVisible(true);
   };
 
+  const handleDeleteTitle = (titleToDelete: string) => {
+    Alert.alert(
+      "Delete Title",
+      `Are you sure you want to delete "${titleToDelete}" and all its records?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            const updatedMeasurements = measurements.filter(
+              (measurement) => measurement.title !== titleToDelete
+            );
+            setMeasurements(updatedMeasurements);
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Title Section */}
@@ -67,10 +95,20 @@ export default function ProgressPage() {
           <View key={index} style={styles.measurementGroup}>
             <View style={styles.titleRow}>
               <Text style={styles.measurementTitle}>{title}</Text>
-              <TouchableOpacity onPress={() => openModalForExistingTitle(title)} style={styles.smallAddButton}>
-                <FontAwesome5 name="plus" size={12} color="white" />
-              </TouchableOpacity>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {/* Add Button */}
+                <TouchableOpacity onPress={() => openModalForExistingTitle(title)} style={styles.smallAddButton}>
+                  <FontAwesome5 name="plus" size={12} color="white" />
+                </TouchableOpacity>
+
+                {/* Delete Button */}
+                <TouchableOpacity onPress={() => handleDeleteTitle(title)} style={styles.smallDeleteButton}>
+                  <Text style={{ color: 'white', fontSize: 12 }}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
+
             {measurementsGroup.map((measurement, i) => (
               <View key={i} style={styles.measurementItem}>
                 <Text style={styles.measurementText}>
@@ -112,7 +150,13 @@ export default function ProgressPage() {
             <TouchableOpacity style={styles.addSetButton} onPress={handleAddMeasurement}>
               <Text style={styles.buttonText}>Add</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelButton} onPress={() => { setIsModalVisible(false); setIsTitleEditable(true); }}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => {
+                setIsModalVisible(false);
+                setIsTitleEditable(true);
+              }}
+            >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -124,7 +168,7 @@ export default function ProgressPage() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#212121',
     paddingHorizontal: 20,
     paddingVertical: 30,
@@ -146,19 +190,14 @@ const styles = StyleSheet.create({
   },
   titleRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
   },
   measurementTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FF7B24',
-    marginRight: 10,
-  },
-  smallAddButton: {
-    backgroundColor: '#FF7B24',
-    padding: 5,
-    borderRadius: 5,
+    marginBottom: 10,
   },
   measurementItem: {
     backgroundColor: '#333333',
@@ -179,6 +218,18 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 50,
     alignItems: 'center',
+  },
+  smallAddButton: {
+    backgroundColor: '#FF7B24',
+    padding: 5,
+    borderRadius: 5,
+    marginLeft: 8,
+  },
+  smallDeleteButton: {
+    backgroundColor: '#FF7B24',
+    padding: 5,
+    borderRadius: 5,
+    marginLeft: 8,
   },
   modal: {
     position: 'absolute',
@@ -206,7 +257,7 @@ const styles = StyleSheet.create({
   },
   disabledInput: {
     backgroundColor: '#555555',
-    color: '#BBBBBB',
+    color: '#999999',
   },
   modalActions: {
     marginTop: 20,
