@@ -458,6 +458,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#EBEBEB",
     marginBottom: 20,
+    textAlign: "center",
   },
   modalActions: {
     marginTop: 20,
