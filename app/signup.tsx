@@ -8,19 +8,23 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { db, auth } from "@/firebaseConfig.js";
+import { doc, setDoc } from "firebase/firestore";
+
 
 export default function SignUp() {
   const router = useRouter();
   const auth = getAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSignUp = async () => {
-    if (!email || !confirmEmail || !password || !confirmPassword) {
+    if (!name || !email || !confirmEmail || !password || !confirmPassword) {
       setError("Please fill in all fields");
       return;
     }
@@ -39,8 +43,14 @@ export default function SignUp() {
     setError("");
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       router.push("/");
+
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        name: name,
+        email: email,
+      });
+
     } catch (error) {
       if (error instanceof Error) {
         handleAuthError((error as any).code);
@@ -71,6 +81,13 @@ export default function SignUp() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Sign Up</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Name"
+        placeholderTextColor="#999"
+        value={name}
+        onChangeText={setName}
+      />
       <TextInput
         style={styles.input}
         placeholder="Email"

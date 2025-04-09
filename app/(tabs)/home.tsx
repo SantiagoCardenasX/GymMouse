@@ -11,8 +11,17 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { useFocusEffect } from '@react-navigation/native';
-import ConfettiCannon from 'react-native-confetti-cannon';
+import { useFocusEffect } from "@react-navigation/native";
+import ConfettiCannon from "react-native-confetti-cannon";
+import { auth, db } from "@/firebaseConfig.js";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  onSnapshot,
+} from "firebase/firestore";
 
 const motivationalQuotes = [
   "The only bad workout is the one that didn't happen.",
@@ -31,8 +40,9 @@ export default function HomeScreen() {
   const [completedWorkouts, setCompletedWorkouts] = useState<number[]>([]);
   const [selectedWorkouts, setSelectedWorkouts] = useState<number[]>([]);
   const [goalInput, setGoalInput] = useState("");
-  const [goals, setGoals] = useState<string[]>([]);
+  const [goals, setGoals] = useState<{ id: string; title: string }[]>([]);
   const confettiRef = useRef<any>(null);
+  const [userData, setUserData] = useState<{name: string, email: string} | null>(null);
 
   const todayDate = new Date().toDateString();
 
@@ -55,10 +65,6 @@ export default function HomeScreen() {
   }, [todayWorkouts, completedWorkouts]);
 
   useEffect(() => {
-    saveGoals();
-  }, [goals]);
-
-  useEffect(() => {
     if (isWorkoutCompleted && confettiRef.current) {
       confettiRef.current.start();
     }
@@ -69,6 +75,19 @@ export default function HomeScreen() {
       loadPresetWorkouts();
     }, [])
   );
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+  
+    const unsubscribe = onSnapshot(doc(db, "users", user.uid), (doc) => {
+      if (doc.exists()) {
+        setUserData(doc.data() as {name: string, email: string});
+      }
+    });
+  
+    return () => unsubscribe();
+  }, []);
 
   const loadPresetWorkouts = async () => {
     const saved = await AsyncStorage.getItem("workoutPresets");
@@ -101,15 +120,61 @@ export default function HomeScreen() {
     }
   };
 
+  // Fetch goals from Firestore
   const loadGoals = async () => {
-    const savedGoals = await AsyncStorage.getItem("userGoals");
-    if (savedGoals) {
-      setGoals(JSON.parse(savedGoals));
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const querySnapshot = await getDocs(
+        collection(db, "users", user.uid, "goals")
+      );
+      const goalsData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        title: doc.data().title,
+      }));
+      setGoals(goalsData);
+    } catch (error) {
+      console.error("Error fetching goals:", error);
+      Alert.alert("Error", "Failed to load goals");
     }
   };
 
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const goalsRef = collection(db, "users", user.uid, "goals");
+
+    const unsubscribe = onSnapshot(goalsRef, (snapshot) => {
+      const updatedGoals = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        title: doc.data().title,
+      }));
+      setGoals(updatedGoals);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const saveGoals = async () => {
-    await AsyncStorage.setItem("userGoals", JSON.stringify(goals));
+    if (!goalInput.trim()) return;
+
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert("Authentication Required", "Please sign in to save goals");
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "users", user.uid, "goals"), {
+        title: goalInput.trim(),
+      });
+      setGoalInput("");
+    } catch (error) {
+      console.error("Error saving goal:", error);
+      Alert.alert("Error", "Failed to save goal");
+    }
   };
 
   const handleSelectWorkout = (index: number) => {
@@ -122,7 +187,10 @@ export default function HomeScreen() {
 
   const handleSaveTodayWorkouts = () => {
     if (selectedWorkouts.length === 0) {
-      Alert.alert("No Workouts Selected", "Please select at least one workout.");
+      Alert.alert(
+        "No Workouts Selected",
+        "Please select at least one workout."
+      );
       return;
     }
     const selected = selectedWorkouts.map((index) => presetWorkouts[index]);
@@ -138,29 +206,16 @@ export default function HomeScreen() {
     }
   };
 
-  const handleAddGoal = () => {
-    if (!goalInput.trim()) return;
-    setGoals([...goals, goalInput.trim()]);
-    setGoalInput("");
-  };
+  const handleDeleteGoal = async (goalId: string) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
 
-  const handleDeleteGoal = (index: number) => {
-    Alert.alert(
-      "Delete Goal",
-      "Are you sure you want to delete this goal?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            const updatedGoals = goals.filter((_, i) => i !== index);
-            setGoals(updatedGoals);
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+      await deleteDoc(doc(db, "users", user.uid, "goals", goalId));
+      loadGoals();
+    } catch (error) {
+      console.error("Error deleting goal:", error);
+    }
   };
 
   return (
@@ -173,13 +228,13 @@ export default function HomeScreen() {
       {/* Confetti animation component */}
       <View
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
           zIndex: 999,
-          pointerEvents: 'none',
+          pointerEvents: "none",
         }}
       >
         <ConfettiCannon
@@ -194,14 +249,12 @@ export default function HomeScreen() {
       {/* Welcome Section */}
       <View style={styles.welcomeSection}>
         <Image
-          source={{
-            uri: "https://images.pexels.com/photos/837358/pexels-photo-837358.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-          }}
+          source={require("../../assets/images/user.png")}
           style={styles.userIcon}
         />
         <View style={styles.welcomeTextContainer}>
           <Text style={styles.helloText}>Hello,</Text>
-          <Text style={styles.welcomeText}>MICHEAL BERNADO</Text>
+          <Text style={styles.welcomeText}>{userData?.name.toUpperCase() || auth.currentUser?.email}</Text>
         </View>
       </View>
 
@@ -263,7 +316,9 @@ export default function HomeScreen() {
           style={styles.setGoalButton}
           onPress={() => setIsModalVisible(true)}
         >
-          <Text style={styles.setGoalButtonText}>+ Select Today's Workouts</Text>
+          <Text style={styles.setGoalButtonText}>
+            + Select Today's Workouts
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -271,11 +326,13 @@ export default function HomeScreen() {
       <View style={styles.goalSection}>
         <Text style={styles.goalTitle}>YOUR GOALS</Text>
 
-        {goals.map((goal, index) => (
-          <View key={index} style={styles.goalItem}>
-            <Text style={styles.goalText}>{goal}</Text>
-            <TouchableOpacity onPress={() => handleDeleteGoal(index)}>
-              <Text style={{ color: "#FF7B24", fontWeight: "bold" }}>Delete</Text>
+        {goals.map((goal) => (
+          <View key={goal.id} style={styles.goalItem}>
+            <Text style={styles.goalText}>{goal.title}</Text>
+            <TouchableOpacity onPress={() => handleDeleteGoal(goal.id)}>
+              <Text style={{ color: "#FF7B24", fontWeight: "bold" }}>
+                Delete
+              </Text>
             </TouchableOpacity>
           </View>
         ))}
@@ -289,10 +346,7 @@ export default function HomeScreen() {
           multiline
           numberOfLines={4}
         />
-        <TouchableOpacity
-          style={styles.setGoalButton}
-          onPress={handleAddGoal}
-        >
+        <TouchableOpacity style={styles.setGoalButton} onPress={saveGoals}>
           <Text style={styles.setGoalButtonText}>Add</Text>
         </TouchableOpacity>
       </View>
@@ -345,7 +399,6 @@ export default function HomeScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
@@ -360,8 +413,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   userIcon: {
-    width: 50,
-    height: 50,
+    width: 65,
+    height: 65,
     borderRadius: 50,
   },
   welcomeTextContainer: {
@@ -377,6 +430,7 @@ const styles = StyleSheet.create({
     color: "#EBEBEB",
     paddingLeft: 5,
     fontWeight: "bold",
+    
   },
   quoteSection: {
     justifyContent: "center",
@@ -430,7 +484,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
-    width: "100%", 
+    width: "100%",
     marginBottom: 10,
   },
   setGoalButtonText: {
@@ -498,10 +552,8 @@ const styles = StyleSheet.create({
     color: "#EBEBEB",
     borderRadius: 10,
     padding: 15,
-    textAlignVertical: "top", 
+    textAlignVertical: "top",
     marginBottom: 10,
     fontSize: 16,
   },
-
 });
-
