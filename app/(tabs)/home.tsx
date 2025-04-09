@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   modal: {
     position: "absolute",
     top: "40%",
-    left: "5%",
+    left: "5.5%",
     backgroundColor: "#333333",
     padding: 20,
     borderRadius: 10,
