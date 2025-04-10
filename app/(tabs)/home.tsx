@@ -41,14 +41,30 @@ export default function HomeScreen() {
   const [selectedWorkouts, setSelectedWorkouts] = useState<number[]>([]);
   const [goalInput, setGoalInput] = useState("");
   const [goals, setGoals] = useState<{ id: string; title: string }[]>([]);
+  const [userData, setUserData] = useState<{
+    name: string;
+    email: string;
+  } | null>(null);
   const confettiRef = useRef<any>(null);
-  const [userData, setUserData] = useState<{name: string, email: string} | null>(null);
+  const user = auth.currentUser;
 
   const todayDate = new Date().toDateString();
 
   const isWorkoutCompleted =
     todayWorkouts.length > 0 &&
     completedWorkouts.length === todayWorkouts.length;
+
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = onSnapshot(doc(db, "users", user.uid), (doc) => {
+      if (doc.exists()) {
+        setUserData(doc.data() as { name: string; email: string });
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const randomQuote =
@@ -75,19 +91,6 @@ export default function HomeScreen() {
       loadPresetWorkouts();
     }, [])
   );
-
-  useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) return;
-  
-    const unsubscribe = onSnapshot(doc(db, "users", user.uid), (doc) => {
-      if (doc.exists()) {
-        setUserData(doc.data() as {name: string, email: string});
-      }
-    });
-  
-    return () => unsubscribe();
-  }, []);
 
   const loadPresetWorkouts = async () => {
     const saved = await AsyncStorage.getItem("workoutPresets");
@@ -120,9 +123,7 @@ export default function HomeScreen() {
     }
   };
 
-  // Fetch goals from Firestore
   const loadGoals = async () => {
-    const user = auth.currentUser;
     if (!user) return;
 
     try {
@@ -141,7 +142,6 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    const user = auth.currentUser;
     if (!user) return;
 
     const goalsRef = collection(db, "users", user.uid, "goals");
@@ -160,7 +160,6 @@ export default function HomeScreen() {
   const saveGoals = async () => {
     if (!goalInput.trim()) return;
 
-    const user = auth.currentUser;
     if (!user) {
       Alert.alert("Authentication Required", "Please sign in to save goals");
       return;
@@ -208,7 +207,6 @@ export default function HomeScreen() {
 
   const handleDeleteGoal = async (goalId: string) => {
     try {
-      const user = auth.currentUser;
       if (!user) return;
 
       await deleteDoc(doc(db, "users", user.uid, "goals", goalId));
@@ -254,7 +252,9 @@ export default function HomeScreen() {
         />
         <View style={styles.welcomeTextContainer}>
           <Text style={styles.helloText}>Hello,</Text>
-          <Text style={styles.welcomeText}>{userData?.name.toUpperCase() || auth.currentUser?.email}</Text>
+          <Text style={styles.welcomeText}>
+            {userData?.name.toUpperCase() || auth.currentUser?.email}
+          </Text>
         </View>
       </View>
 
@@ -430,7 +430,6 @@ const styles = StyleSheet.create({
     color: "#EBEBEB",
     paddingLeft: 5,
     fontWeight: "bold",
-    
   },
   quoteSection: {
     justifyContent: "center",
